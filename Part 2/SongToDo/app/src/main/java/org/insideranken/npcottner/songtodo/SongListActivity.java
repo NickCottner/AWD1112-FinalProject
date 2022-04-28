@@ -43,12 +43,14 @@ public class SongListActivity extends AppCompatActivity {
     String key = "";
     String title;
     String artist;
-    String year;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_song_list);
+        recyclerView = findViewById(R.id.songInfo);
+        fabAdd = findViewById(R.id.fabAdd);
+
         recyclerView = findViewById(R.id.songInfo);
         fabAdd = findViewById(R.id.fabAdd);
 
@@ -68,11 +70,13 @@ public class SongListActivity extends AppCompatActivity {
         fabAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                addSong();
+                addToDoTask();
             }
         });
+
     }
-    private void addSong()
+
+    private void addToDoTask()
     {
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
         LayoutInflater inflater = LayoutInflater.from(this);
@@ -85,7 +89,6 @@ public class SongListActivity extends AppCompatActivity {
 
         EditText title = view.findViewById(R.id.etTitle);
         EditText artist = view.findViewById(R.id.etArtist);
-        EditText year = view.findViewById(R.id.etYear);
         Button btnSave = view.findViewById(R.id.btnSave);
         Button btnCancel = view.findViewById(R.id.btnCancel);
 
@@ -99,10 +102,10 @@ public class SongListActivity extends AppCompatActivity {
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String mTitle= title.getText().toString().trim();
+                String mTitle = title.getText().toString().trim();
                 String mArtist = artist.getText().toString().trim();
-                String mYear = year.getText().toString().trim();
                 String id = reference.push().getKey();
+                String date = DateFormat.getDateInstance().format(new Date());
 
                 if (TextUtils.isEmpty(mTitle)) {
                     title.setError("Title Required");
@@ -113,16 +116,12 @@ public class SongListActivity extends AppCompatActivity {
                     artist.setError("Artist Required");
                     return;
                 }
-                if (TextUtils.isEmpty(mYear)) {
-                    year.setError("Year Required");
-                    return;
-                }
 
-                loader.setMessage("Adding Song Information");
-                loader.setCanceledOnTouchOutside(false);
+                loader.setMessage("Adding Song Data");
+                loader.setCanceledOnTouchOutside(true);
                 loader.show();
 
-                SongModel model = new SongModel(mTitle, mArtist, mYear, id);
+                SongModel model = new SongModel(mTitle, mArtist, id, date);
 
                 reference.child(id).setValue(model).addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
@@ -130,13 +129,12 @@ public class SongListActivity extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             Toast.makeText(SongListActivity.this, "Song Insertion Successful",
                                     Toast.LENGTH_SHORT).show();
-                            loader.dismiss();
                         } else {
                             String error = task.getException().toString();
                             Toast.makeText(SongListActivity.this, "Song Insertion Failed\n" +
                                     error, Toast.LENGTH_SHORT).show();
-                            loader.dismiss();
                         }
+                        loader.dismiss();
                     }
                 });
 
@@ -152,13 +150,13 @@ public class SongListActivity extends AppCompatActivity {
                 .setQuery(reference, SongModel.class)
                 .build();
 
-        FirebaseRecyclerAdapter<SongModel, MyViewHolder> adapter =
-                new FirebaseRecyclerAdapter<SongModel, MyViewHolder>(options) {
+        FirebaseRecyclerAdapter<SongModel, MyViewHolder> adapter = new FirebaseRecyclerAdapter<SongModel, MyViewHolder>(options)
+        {
             @Override
-            protected void onBindViewHolder(@NonNull MyViewHolder holder, final int position, @NonNull final SongModel model) {
+            protected void onBindViewHolder(@NonNull MyViewHolder holder, int position, @NonNull SongModel model) {
+                holder.setDate(model.getDate());
                 holder.setTitle(model.getTitle());
                 holder.setArtist(model.getArtist());
-                holder.setYear(model.getYear());
 
                 holder.mView.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -166,23 +164,24 @@ public class SongListActivity extends AppCompatActivity {
                         key = getRef(holder.getAbsoluteAdapterPosition()).getKey();
                         title = model.getTitle();
                         artist = model.getArtist();
-                        year = model.getYear();
 
                         updateTask();
                     }
                 });
             }
-                    @NonNull
-                    @Override
-                    public MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-                        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_layout, parent, false);
-                        return new MyViewHolder(view);
-                    }
-                };
+
+            @NonNull
+            @Override
+            public MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_layout, parent, false);
+                return new MyViewHolder(view);
+            }
+        };
 
         recyclerView.setAdapter(adapter);
         adapter.startListening();
     }
+
     public static class MyViewHolder extends RecyclerView.ViewHolder {
         View mView;
 
@@ -192,18 +191,18 @@ public class SongListActivity extends AppCompatActivity {
         }
 
         public void setTitle(String title) {
-            TextView tvTitle = mView.findViewById(R.id.tvRowTitle);
-            tvTitle.setText(title);
+            TextView taskTextView = mView.findViewById(R.id.tvRowTitle);
+            taskTextView.setText(title);
         }
 
-        public void setArtist(String artist) {
-            TextView tvArtist = mView.findViewById(R.id.tvRowArtist);
-            tvArtist.setText(artist);
+        public void setArtist(String desc) {
+            TextView descTextView = mView.findViewById(R.id.tvRowArtist);
+            descTextView.setText(desc);
         }
 
-        public void setYear(String year) {
-            TextView tvYear = mView.findViewById(R.id.tvRowYear);
-            tvYear.setText(year);
+        public void setDate(String date) {
+            TextView dateTextView = mView.findViewById(R.id.tvRowDate);
+            dateTextView.setText(date);
         }
     }
 
@@ -215,18 +214,14 @@ public class SongListActivity extends AppCompatActivity {
 
         final AlertDialog dialog = myDialog.create();
 
-        final EditText mTitle= view.findViewById(R.id.etUpdateTitle);
+        final EditText mTitle = view.findViewById(R.id.etUpdateTitle);
         final EditText mArtist = view.findViewById(R.id.etUpdateArtist);
-        final EditText mYear = view.findViewById(R.id.etUpdateYear);
-        
+
         mTitle.setText(title);
         mTitle.setSelection(title.length());
 
         mArtist.setText(artist);
         mArtist.setSelection(artist.length());
-
-        mYear.setText(year);
-        mYear.setSelection(year.length());
 
         Button btnDelete = view.findViewById(R.id.btnDelete);
         Button btnUpdate = view.findViewById(R.id.btnUpdate);
@@ -236,19 +231,20 @@ public class SongListActivity extends AppCompatActivity {
             public void onClick(View v) {
                 title = mTitle.getText().toString().trim();
                 artist = mArtist.getText().toString().trim();
-                year = mYear.getText().toString().trim();
 
-                SongModel model = new SongModel(title, artist, key, year);
+                String date = DateFormat.getDateInstance().format(new Date());
+
+                SongModel model = new SongModel(title, artist, key, date);
 
                 reference.child(key).setValue(model).addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
 
                         if (task.isSuccessful()){
-                            Toast.makeText(SongListActivity.this, "Song Updated Successfully", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(SongListActivity.this, "Data has been updated successfully", Toast.LENGTH_SHORT).show();
                         }else {
                             String err = task.getException().toString();
-                            Toast.makeText(SongListActivity.this, "Update Failed "+err, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(SongListActivity.this, "Update failed "+err, Toast.LENGTH_SHORT).show();
                         }
 
                     }
@@ -266,10 +262,10 @@ public class SongListActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         if (task.isSuccessful()){
-                            Toast.makeText(SongListActivity.this, "Song Successfully Deleted", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(SongListActivity.this, "Task deleted successfully", Toast.LENGTH_SHORT).show();
                         }else {
                             String err = task.getException().toString();
-                            Toast.makeText(SongListActivity.this, "Song Deletion Failed "+ err, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(SongListActivity.this, "Failed to delete task "+ err, Toast.LENGTH_SHORT).show();
                         }
                     }
                 });

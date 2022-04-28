@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">SongToDo</string>
+    <string name="tvTheLayoutTitle">Song Information</string>
+    <string name="tvTheSongTitle">Song Title</string>
+    <string name="tvTheRowArtist">Artist</string>
+    <string name="tvTheRowDate">Date Song Was Added</string>
 </resources>

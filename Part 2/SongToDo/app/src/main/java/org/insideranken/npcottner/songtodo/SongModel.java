@@ -4,16 +4,16 @@ public class SongModel {
     String title;
     String artist;
     String id;
-    String year;
+    String date;
 
     public SongModel() {
     }
 
-    public SongModel(String title, String artist, String id, String year) {
+    public SongModel(String title, String artist, String id, String date) {
         this.title = title;
         this.artist = artist;
         this.id = id;
-        this.year = year;
+        this.date = date;
     }
 
     public String getTitle() {
@@ -40,11 +40,11 @@ public class SongModel {
         this.id = id;
     }
 
-    public String getYear() {
-        return year;
+    public String getDate() {
+        return date;
     }
 
-    public void setYear(String year) {
-        this.year = year;
+    public void setDate(String date) {
+        this.date = date;
     }
 }
